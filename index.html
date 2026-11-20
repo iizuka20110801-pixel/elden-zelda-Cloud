@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>刃ノ輪廻 -ETERNAL TRIAL-</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.module.js"
+  }
+}
+</script>
+
+<style>
+  :root {
+    --sky-top: #dfe9df;
+    --sky-haze: #e9ddbd;
+    --ink: #2c2719;
+    --ink-soft: #5a5440;
+    --gold: #c9a24a;
+    --gold-deep: #a5812f;
+    --moss: #5f7a56;
+    --crimson: #7a2c2c;
+    --teal: #3f8f82;
+    --parchment: #f6f1e1;
+    --parchment-dim: #eee6cf;
+    --line: rgba(44, 39, 25, 0.18);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0; width: 100%; height: 100%;
+    overflow: hidden; overscroll-behavior: none;
+    background: var(--sky-haze);
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    color: var(--ink);
+    touch-action: none;
+    user-select: none;
+  }
+  #app { position: fixed; inset: 0; }
+  #app canvas { display: block; width: 100%; height: 100%; }
+
+  .screen {
+    position: fixed; inset: 0;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    z-index: 5;
+  }
+  .screen.active { display: flex; }
+
+  /* ---------- タイトル画面 ---------- */
+  #screen-title {
+    justify-content: center;
+    background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-haze) 62%, #cdbf94 100%);
+    text-align: center;
+  }
+  .mountains {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 34vh; z-index: 0;
+  }
+  .mountains .layer {
+    position: absolute; left: -5%; right: -5%; bottom: 0; height: 100%;
+    background: #93a187;
+  }
+  .mountains .layer.l2 { background: #798a6c; height: 76%; clip-path: polygon(0% 100%, 0% 46%, 12% 30%, 24% 48%, 38% 18%, 52% 40%, 66% 22%, 80% 44%, 100% 28%, 100% 100%); }
+  .mountains .layer.l1 { background: #5c6e52; height: 52%; clip-path: polygon(0% 100%, 0% 56%, 15% 36%, 30% 58%, 46% 30%, 64% 54%, 82% 32%, 100% 50%, 100% 100%); opacity: 0.9; }
+  .titleBlock { position: relative; z-index: 2; padding: 0 24px; }
+  .titleTag {
+    font-size: 12px; letter-spacing: 0.3em; color: var(--ink-soft);
+    margin-bottom: 18px;
+  }
+  .titleMain {
+    font-family: 'Shippori Mincho', serif; font-weight: 800;
+    font-size: clamp(42px, 11vw, 88px); letter-spacing: 0.14em;
+    color: var(--ink); margin: 0; text-shadow: 0 2px 0 rgba(255,255,255,0.35);
+  }
+  .titleKana {
+    font-size: 13px; letter-spacing: 0.4em; color: var(--ink-soft); margin-top: 10px;
+  }
+  .titleTagline {
+    font-family: 'Shippori Mincho', serif; font-size: 17px; color: var(--moss);
+    margin-top: 22px; letter-spacing: 0.08em;
+  }
+  #btnStart {
+    margin-top: 48px; border: none; background: none; cursor: pointer;
+    font-family: 'Zen Kaku Gothic New', sans-serif; font-size: 15px; letter-spacing: 0.2em;
+    color: var(--ink); padding: 14px 34px; border: 1px solid var(--line); border-radius: 2px;
+    animation: pulseTap 2.2s ease-in-out infinite;
+  }
+  @keyframes pulseTap { 0%,100% { opacity: 0.55; } 50% { opacity: 1; } }
+
+  /* ---------- 選択画面(武器/ボス共通) ---------- */
+  #screen-weapon, #screen-boss {
+    justify-content: flex-start; padding: 7vh 5vw 14vh; gap: 18px;
+    background: linear-gradient(180deg, var(--sky-haze), #e4d6ad);
+    overflow-y: auto; width: 100%;
+  }
+  .selectHeading {
+    font-family: 'Shippori Mincho', serif; font-size: 26px; letter-spacing: 0.1em; margin: 0;
+  }
+  .selectSub { font-size: 12px; color: var(--ink-soft); letter-spacing: 0.15em; margin-top: 4px; }
+  .cardGrid {
+    display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; width: 100%; max-width: 980px;
+  }
+  .card {
+    width: min(300px, 86vw); text-align: left; cursor: pointer;
+    background: var(--parchment); border: 1px solid var(--line); border-radius: 4px;
+    padding: 16px 16px 14px; font-family: inherit; color: var(--ink);
+  }
+  .card.selected { border-color: var(--gold-deep); background: var(--parchment-dim); box-shadow: inset 0 0 0 1px var(--gold-deep); }
+  .cardHead { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .swatch { width: 20px; height: 20px; display: inline-block; border-radius: 50%; border: 1px solid var(--line); flex-shrink: 0; }
+  .cardTitle { font-size: 16px; font-weight: 700; }
+  .cardKana { font-size: 11px; color: var(--ink-soft); letter-spacing: 0.1em; }
+  .cardDesc { font-size: 12.5px; line-height: 1.6; color: var(--ink-soft); margin: 6px 0 10px; }
+  .statRow { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--ink-soft); padding: 2px 0; letter-spacing: 0.04em; }
+  .statRow span:last-child { color: var(--gold-deep); letter-spacing: 0.05em; }
+
+  .navRow { position: fixed; bottom: 0; left: 0; right: 0; padding: 14px 20px calc(14px + env(safe-area-inset-bottom, 0px)); display: flex; justify-content: center; gap: 14px; background: linear-gradient(180deg, rgba(228,214,173,0) 0%, #e4d6ad 55%); z-index: 6; }
+  .btnPrimary, .btnGhost {
+    font-family: 'Zen Kaku Gothic New', sans-serif; font-size: 14px; letter-spacing: 0.12em;
+    padding: 13px 28px; border-radius: 2px; cursor: pointer;
+  }
+  .btnPrimary { background: var(--ink); color: var(--parchment); border: 1px solid var(--ink); }
+  .btnGhost { background: transparent; color: var(--ink-soft); border: 1px solid var(--line); }
+
+  /* ---------- バトルHUD ---------- */
+  #screen-battle { pointer-events: none; justify-content: flex-start; }
+  #screen-battle.active { display: flex; }
+  .hudTop { position: absolute; top: calc(14px + env(safe-area-inset-top, 0px)); left: 16px; right: 16px; display: flex; justify-content: space-between; align-items: flex-start; }
+  .barGroup { width: 42vw; max-width: 300px; }
+  .barLabel { font-size: 10.5px; letter-spacing: 0.15em; color: var(--ink); margin-bottom: 3px; text-shadow: 0 1px 2px rgba(255,255,255,0.5); }
+  .barTrack { height: 10px; background: rgba(44,39,25,0.18); border: 1px solid rgba(44,39,25,0.35); border-radius: 2px; overflow: hidden; }
+  .barTrack.small { height: 6px; margin-top: 4px; }
+  .barFill { height: 100%; width: 100%; transition: width 0.15s linear; }
+  #hpFill { background: var(--crimson); }
+  #staminaFill { background: var(--teal); }
+  #bossHpFill { background: #8a3030; }
+  #bossPoiseFill { background: var(--gold); }
+  .barTrack.broken #bossPoiseFill { background: #e8d94a; animation: poiseBreak 0.4s ease-in-out infinite; }
+  @keyframes poiseBreak { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+  .bossGroup { text-align: right; }
+  #bossNameLabel { font-family: 'Shippori Mincho', serif; font-size: 15px; margin-bottom: 4px; text-shadow: 0 1px 3px rgba(255,255,255,0.6); }
+  #deathCounter { position: absolute; top: calc(66px + env(safe-area-inset-top, 0px)); left: 16px; font-size: 11px; color: var(--ink-soft); }
+
+  #btnQuit {
+    position: absolute; top: calc(14px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%);
+    background: none; border: none; font-size: 10px; color: var(--ink-soft); letter-spacing: 0.1em;
+    pointer-events: auto; padding: 4px 10px;
+  }
+
+  #phaseBanner {
+    position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
+    font-family: 'Shippori Mincho', serif; font-size: clamp(26px, 6vw, 46px); letter-spacing: 0.2em;
+    color: var(--crimson); opacity: 0; text-shadow: 0 0 18px rgba(255,255,255,0.8);
+    transition: opacity 0.4s ease;
+  }
+  #phaseBanner.show { opacity: 1; }
+
+  #msgFeedback {
+    position: absolute; top: 58%; left: 50%; transform: translate(-50%, -50%);
+    font-family: 'Shippori Mincho', serif; font-size: 22px; letter-spacing: 0.1em;
+    opacity: 0; color: var(--ink); text-shadow: 0 0 10px rgba(255,255,255,0.9);
+  }
+  .feedback.show { animation: feedbackPop 0.9s ease forwards; }
+  @keyframes feedbackPop { 0% { opacity: 0; transform: translate(-50%, -40%) scale(0.8); } 15% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); } 75% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -58%) scale(1); } }
+  .feedback.just_dodge, .feedback.parry, .feedback.reflect { color: var(--gold-deep); }
+  .feedback.guardbreak, .feedback.hit { color: var(--crimson); }
+
+  #introCard {
+    position: absolute; top: 18%; left: 50%; transform: translate(-50%, -24px); width: min(86vw, 420px);
+    background: rgba(246,241,225,0.92); border-top: 1px solid var(--gold-deep); border-bottom: 1px solid var(--gold-deep);
+    padding: 14px 20px; text-align: center; opacity: 0; transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  #introCard.show { opacity: 1; transform: translate(-50%, 0); }
+  #introName { font-family: 'Shippori Mincho', serif; font-size: 20px; letter-spacing: 0.1em; }
+  #introFlavor { font-size: 12px; color: var(--ink-soft); margin-top: 6px; line-height: 1.6; }
+
+  /* ---------- タッチ操作 ---------- */
+  #joystickZone {
+    position: absolute; left: 0; bottom: 0; width: 48vw; height: 46vh;
+    pointer-events: auto;
+  }
+  #joystickBase {
+    position: absolute; left: calc(18px + env(safe-area-inset-left, 0px)); bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+    width: 110px; height: 110px; border-radius: 50%;
+    background: rgba(44,39,25,0.12); border: 1px solid rgba(44,39,25,0.3);
+  }
+  #joystickThumb {
+    position: absolute; left: calc(18px + env(safe-area-inset-left, 0px) + 37px); bottom: calc(18px + env(safe-area-inset-bottom, 0px) + 37px);
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(44,39,25,0.42);
+  }
+
+  .actionCluster {
+    position: absolute; right: calc(16px + env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    width: 190px; height: 190px; pointer-events: none;
+  }
+  .actBtn {
+    position: absolute; width: 64px; height: 64px; border-radius: 50%;
+    border: 1px solid rgba(44,39,25,0.35); background: rgba(246,241,225,0.78);
+    display: flex; align-items: center; justify-content: center; flex-direction: column;
+    font-size: 12px; letter-spacing: 0.05em; color: var(--ink); pointer-events: auto;
+  }
+  .actBtn.pressed, .actBtn:active { background: rgba(201,162,74,0.55); }
+  #btnAttack { right: 0; bottom: 0; width: 76px; height: 76px; font-size: 14px; background: rgba(122,44,44,0.16); }
+  #btnGuard { left: 0; bottom: 20px; background: rgba(63,143,130,0.18); }
+  #btnDodge { right: 6px; top: 0; background: rgba(95,122,86,0.18); }
+  #btnSkill { left: 24px; top: 30px; width: 56px; height: 56px; background: rgba(201,162,74,0.22); font-size: 10.5px; }
+  #btnSkill.cooling { opacity: 0.4; }
+  #skillLabel { font-size: 8.5px; color: var(--ink-soft); margin-top: 2px; max-width: 48px; text-align: center; line-height: 1.2; }
+
+  /* ---------- 結果画面 ---------- */
+  #screen-result {
+    justify-content: center; align-items: center; text-align: center;
+    background: linear-gradient(180deg, var(--sky-haze), #d9cba0);
+  }
+  #resultTitle { font-family: 'Shippori Mincho', serif; font-size: clamp(30px, 7vw, 52px); letter-spacing: 0.12em; }
+  #resultTitle.win { color: var(--gold-deep); }
+  #resultTitle.lose { color: var(--crimson); }
+  #resultStats { margin-top: 14px; font-size: 13px; color: var(--ink-soft); letter-spacing: 0.05em; }
+  .resultNav { margin-top: 36px; display: flex; gap: 14px; }
+
+  /* ---------- 縦向き案内 ---------- */
+  #rotatePrompt { display: none; }
+  @media (orientation: portrait) and (max-width: 900px) {
+    #rotatePrompt {
+      display: flex; position: fixed; inset: 0; z-index: 50;
+      background: var(--ink); color: var(--parchment);
+      align-items: center; justify-content: center; text-align: center;
+      font-family: 'Shippori Mincho', serif; font-size: 16px; letter-spacing: 0.1em; padding: 0 10vw;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<!-- タイトル画面 -->
+<div id="screen-title" class="screen active">
+  <div class="mountains"><div class="layer"></div><div class="layer l2"></div><div class="layer l1"></div></div>
+  <div class="titleBlock">
+    <div class="titleTag">HARDCORE BOSS RUSH</div>
+    <h1 class="titleMain">刃ノ輪廻</h1>
+    <div class="titleKana">ヤイバノリンネ ー ETERNAL TRIAL ー</div>
+    <p class="titleTagline">死セズ、学べ。</p>
+    <button id="btnStart">タップしてはじめる</button>
+  </div>
+</div>
+
+<!-- 武器選択 -->
+<div id="screen-weapon" class="screen">
+  <h2 class="selectHeading">武器を選べ</h2>
+  <div class="selectSub">WEAPON SELECT</div>
+  <div class="cardGrid" id="weaponList"></div>
+  <div class="navRow"><button class="btnPrimary" id="btnToBoss">次へ：挑む敵を選ぶ</button></div>
+</div>
+
+<!-- ボス選択 -->
+<div id="screen-boss" class="screen">
+  <h2 class="selectHeading">挑む敵を選べ</h2>
+  <div class="selectSub">CHOOSE YOUR FOE</div>
+  <div class="cardGrid" id="bossList"></div>
+  <div class="navRow"><button class="btnGhost" id="btnBackToWeapon">戻る</button><button class="btnPrimary" id="btnFight">死闘、開始</button></div>
+</div>
+
+<!-- バトルHUD -->
+<div id="screen-battle" class="screen">
+  <div class="hudTop">
+    <div class="barGroup">
+      <div class="barLabel">HP</div>
+      <div class="barTrack"><div id="hpFill" class="barFill"></div></div>
+      <div class="barTrack small"><div id="staminaFill" class="barFill"></div></div>
+    </div>
+    <div class="barGroup bossGroup">
+      <div id="bossNameLabel" class="barLabel"></div>
+      <div class="barTrack"><div id="bossHpFill" class="barFill"></div></div>
+      <div class="barTrack small"><div id="bossPoiseFill" class="barFill"></div></div>
+    </div>
+  </div>
+  <div id="deathCounter">死亡 0</div>
+  <button id="btnQuit">× メニューへ戻る</button>
+
+  <div id="phaseBanner"></div>
+  <div id="msgFeedback" class="feedback"></div>
+  <div id="introCard"><div id="introName"></div><div id="introFlavor"></div></div>
+
+  <div id="joystickZone">
+    <div id="joystickBase"></div>
+    <div id="joystickThumb"></div>
+  </div>
+
+  <div class="actionCluster">
+    <button id="btnGuard" class="actBtn">ガード</button>
+    <button id="btnDodge" class="actBtn">回避</button>
+    <button id="btnSkill" class="actBtn"><span>固有技</span><span id="skillLabel"></span></button>
+    <button id="btnAttack" class="actBtn">攻撃</button>
+  </div>
+</div>
+
+<!-- 結果画面 -->
+<div id="screen-result" class="screen">
+  <div id="resultTitle"></div>
+  <div id="resultStats"></div>
+  <div class="resultNav">
+    <button class="btnGhost" id="btnMenu">メニューへ</button>
+    <button class="btnPrimary" id="btnRetry">再挑戦</button>
+  </div>
+</div>
+
+<div id="rotatePrompt">画面を横向きにしてください<br>-please rotate your device-</div>
+
+<script type="module" src="./main.js"></script>
+</body>
+</html>
